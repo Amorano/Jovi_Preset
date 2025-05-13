@@ -30,10 +30,7 @@ Please consider sponsoring me if you enjoy the results of my work, code or docum
 
 ## HIGHLIGHTS
 
-<div align="center">
-<img src="https://github.com/user-attachments/assets/f23d96d7-edaf-44d9-924b-6c6636b625c3" alt="Jovi Presets" width="768"/>
-<img src="https://github.com/user-attachments/assets/61509883-7567-4990-b9ef-1e83084840fb" alt="Jovi Presets" width="768"/>
-</div>
+
 
 ## UPDATES
 
