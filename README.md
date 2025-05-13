@@ -28,9 +28,21 @@ Please consider sponsoring me if you enjoy the results of my work, code or docum
 [![BE A GITHUB SPONSOR ❤️](https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA)](https://github.com/sponsors/Amorano) | [![DIRECTLY SUPPORT ME VIA PAYPAL](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/onarom) | [![PATREON SUPPORTER](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/joviex) | [![SUPPORT ME ON KO-FI!](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alexandermorano)
 </div>
 
+## INSPIRATION
+
+This is an idea I have had rumbling around since May 2024 and the first ComfyUI conference. I poorly assumed someone else would do it long before now. I finally got motivated by [fredconex](https://github.com/fredconex) after the excellent audio synth node work that was done, but was only using presets in the Equalizer.
+
 ## HIGHLIGHTS
 
+* Simple right-click menu entry to add or use
+* Presets are stored with your other ComfyUI configuration settings
+* Easy removal with ctrl-click on entry
 
+![image](https://github.com/user-attachments/assets/09f9e7e7-4fd1-48bc-91e0-8da90d214140)
+
+![image](https://github.com/user-attachments/assets/a56b8a52-edda-4c1f-8af5-af7a9b0f814e)
+
+![image](https://github.com/user-attachments/assets/98c26d0b-eb97-4a0c-860b-f0a59e9860cc)
 
 ## UPDATES
 
