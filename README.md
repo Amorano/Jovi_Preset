@@ -46,6 +46,9 @@ This is an idea I have had rumbling around since May 2024 and the first ComfyUI 
 
 ## UPDATES
 
+**2025/05/17** @1.0.1:
+* added sidebar
+
 **2025/05/13** @1.0.0:
 * intial commit
 
