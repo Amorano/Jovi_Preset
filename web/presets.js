@@ -5,23 +5,30 @@ import { $el } from "../../scripts/ui.js";
 
 let PANEL;
 const SETTINGS = "jovi.preset";
+const EVENT_UPDATE = "jovi.preset-save"
 const PRESET = app.extensionManager.setting.get(SETTINGS) || {};
 
 class PresetManager {
     constructor(node) {
         this.node = node;
-        this.presets = PRESET[this.node.title] || {};
+        const defaults = {};
+        for (const widget of Object.values(this.node.widgets)) {
+            if (widget.options?.default) {
+                defaults[widget.name] = widget.options.default;
+            } else if (widget.options?.values) {
+                defaults[widget.name] = widget.options.values[0];
+            } else if (widget?.value) {
+                defaults[widget.name] = widget.value;
+            }
+        }
+        this.presets = {
+            ...{"default": defaults},
+            ...(PRESET[this.node.title] || {})
+        };
         this.content = null;
     }
 
     apply(name) {
-        if (name === "default") {
-            for (const widget of Object.values(this.node.widgets)) {
-                widget.value = widget.options?.default;
-            }
-            return;
-        }
-
         const preset = this.presets?.[name];
         if (preset) {
             for (const [key, value] of Object.entries(preset)) {
@@ -35,19 +42,35 @@ class PresetManager {
         }
     }
 
-    async del(name) {
+    event_update(preset, detail) {
+        // 🔊 Dispatch custom global event
+        window.dispatchEvent(new CustomEvent(EVENT_UPDATE, {
+            detail: {
+                presetName: preset,
+            }
+        }));
+
+        app.extensionManager.toast.add({
+            severity: "success",
+            summary: "Success",
+            detail: detail,
+            life: 3000
+        });
+    }
+
+    del(name) {
         if (name === "default") {
             throw new Error("Cannot delete 'default' preset");
         }
         delete this.presets[name];
-        PRESET[this.node.title] = this.presets;
-        if (Object.keys(PRESET[this.node.title] || {}).length === 0) {
-            delete PRESET[this.node.title];
-        }
-        await app.extensionManager.setting.set(SETTINGS, PRESET);
+        //PRESET[this.node.title] = this.presets;
+        PRESET[this.node.title] = structuredClone(this.presets);
+        delete PRESET[this.node.title]["default"];
+        app.extensionManager.setting.set(SETTINGS, PRESET);
+        this.event_update(name, `Preset ${name} removed`);
     }
 
-    async save(name) {
+    save(name) {
         name = name.toLowerCase();
         if (name === "default") {
             throw new Error("Cannot overwrite 'default' preset");
@@ -58,15 +81,20 @@ class PresetManager {
             this.presets[name][widget.name] = widget.value;
         }
 
-        PRESET[this.node.title] = this.presets;
-        await app.extensionManager.setting.set(SETTINGS, PRESET);
+        //PRESET[this.node.title] = this.presets;
+        PRESET[this.node.title] = structuredClone(this.presets);
+        delete PRESET[this.node.title]["default"];
+        app.extensionManager.setting.set(SETTINGS, PRESET);
+        this.event_update(name, `Preset ${name} saved`);
     }
 }
 
 class PresetManagerPanel {
-    constructor() {
+    constructor(el) {
         this.content = null;
         this.tbody = null;
+        this.el = el;
+
         this.contextMenu = $el("div", {
             class: "jov-preset-contextmenu"
         }, [
@@ -77,6 +105,10 @@ class PresetManagerPanel {
 
         document.addEventListener("click", () => {
             this.contextMenu.style.display = "none";
+        });
+
+        window.addEventListener(EVENT_UPDATE, (e) => {
+            this.panel();
         });
     }
 
@@ -156,21 +188,26 @@ class PresetManagerPanel {
     }
 
     panel() {
-        const table = $el("table.flexible-table");
         this.tbody = $el("tbody");
-        for (const [groupName, presets] of Object.entries(PRESET)) {
+        for (const [groupName, all_presets] of Object.entries(PRESET)) {
+            // Row for each preset inside the group
+            const node_presets = Object.entries(all_presets);
+            if (node_presets.length == 0) {
+                continue;
+            }
+
             // Header row for the group (e.g., "BLUR (JOV)")
             const headerRow = $el("tr", {}, [
                 $el("th", { colspan: 1 }, [document.createTextNode(groupName)])
             ]);
             this.tbody.appendChild(headerRow);
-
-            // Row for each preset inside the group
-            for (const [presetName, entries] of Object.entries(presets)) {
+            for (const [presetName, entries] of Object.values(node_presets)) {
+                if (presetName == "default") {
+                    continue;
+                }
                 const tooltip = this.multilineTooltip(entries);
                 const cell = $el("td", {
                     title: tooltip,
-
                 }, [
                     document.createTextNode(presetName)
                 ]);
@@ -184,8 +221,7 @@ class PresetManagerPanel {
             }
         }
 
-        table.appendChild(this.tbody);
-        return $el("div.jov-preset", [
+        const panel = $el("div.jov-preset", [
             $el("div.jov-preset-header", [
                 $el("div", { textContent: "PRESET MANAGER" })
             ]),
@@ -195,8 +231,17 @@ class PresetManagerPanel {
                 className: "jov-preset-search-input",
                 oninput: (e) => this.panel_search_filter(e.target.value)
             }),
-            $el("div.jov-preset-main", [table])
-        ])
+            $el("div.jov-preset-main", [
+                $el("table.flexible-table", [
+                    this.tbody
+                ])
+            ])
+        ]);
+
+        while (this.el.firstChild) {
+            this.el.removeChild(this.el.firstChild);
+        }
+        this.el.appendChild(panel);
     }
 }
 
@@ -208,10 +253,9 @@ app.extensionManager.registerSidebarTab({
     type: "custom",
     render: async (el) => {
         if (typeof PANEL === "undefined" || !PANEL) {
-            PANEL = new PresetManagerPanel();
+            PANEL = new PresetManagerPanel(el);
         }
         const panel = PANEL.panel();
-        el.appendChild(panel);
     }
 });
 
@@ -258,20 +302,33 @@ app.registerExtension({
             const presetList = [{
                 content: "Save Preset...",
                 callback: () => {
-                    const prompt = canvas.prompt("Save Preset", "", async function(v) {
-                        if (/^[A-Za-z\s]+$/.test(v)) {
-                            try {
-                                await this.presetManager.save(v);
-                            } catch(e) {
-                                throw new Error(e);
+                    app.extensionManager.dialog.prompt({
+                        title: "User Input",
+                        message: "Please enter your name:",
+                        defaultValue: "User"
+                    }).then(result => {
+                        if (result !== null) {
+                            if (/^[A-Za-z\s]+$/.test(result)) {
+                                try {
+                                    this.presetManager.save(result);
+                                } catch(e) {
+                                    app.extensionManager.toast.add({
+                                        severity: "error",
+                                        summary: "Error",
+                                        detail: `Failed to save preset ${e} request`,
+                                        life: 5000
+                                    });
+                                }
+                            } else {
+                                app.extensionManager.toast.add({
+                                    severity: "warn",
+                                    summary: "Warning",
+                                    detail: `Invalid preset name {result}. Only A-Z and space are valid.`,
+                                    life: 5000
+                                });
                             }
                         }
-                    }.bind(this));
-                    if (prompt && prompt.style) {
-                        prompt.style.position = "fixed";
-                        prompt.style.left = `${canvas.last_mouse[0]}px`;
-                        prompt.style.top = `${canvas.last_mouse[1]}px`;
-                    }
+                    });
                 }
             }];
 
@@ -279,10 +336,19 @@ app.registerExtension({
                 const presetObject = {
                     content: presetName,
                     callback: async (a, _, click) => {
-                        if (click.ctrlKey) {
-                            await this.presetManager.del(presetName);
-                        } else {
-                            this.presetManager.apply(presetName);
+                        try {
+                            if (click.ctrlKey) {
+                                this.presetManager.del(presetName);
+                            } else {
+                                this.presetManager.apply(presetName);
+                            }
+                        } catch(e) {
+                            app.extensionManager.toast.add({
+                                severity: "error",
+                                summary: "Error",
+                                detail: `Failed to delete preset ${presetName}:\n${e}`,
+                                life: 5000
+                            });
                         }
                     }
                 };
