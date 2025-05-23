@@ -46,6 +46,9 @@ This is an idea I have had rumbling around since May 2024 and the first ComfyUI 
 
 ## UPDATES
 
+**2025/05/23** @1.0.3:
+* fixed non-error bug when nodes have no preset ability (output nodes)
+
 **2025/05/17** @1.0.2:
 * toast messages
 * auto-updating panel
