@@ -46,6 +46,9 @@ This is an idea I have had rumbling around since May 2024 and the first ComfyUI 
 
 ## UPDATES
 
+**2025/05/23** @1.0.4:
+* when presetmanager was null, was crashing the right-click menu
+
 **2025/05/23** @1.0.3:
 * fixed non-error bug when nodes have no preset ability (output nodes)
 

@@ -332,7 +332,10 @@ app.registerExtension({
                 }
             }];
 
-            for (const presetName of Object.keys(this.presetManager?.presets)) {
+            if (this.presetManager === undefined) {
+                return me;
+            }
+            for (const presetName of Object.keys(this.presetManager.presets)) {
                 const presetObject = {
                     content: presetName,
                     callback: async (a, _, click) => {
